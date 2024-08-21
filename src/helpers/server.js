@@ -9,9 +9,8 @@ const login = ({ user, password }) => {
         connection.connect(`${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`, password, (status) => {
             switch (status) {
                 case Strophe.Status.CONNECTED:
-                    console.log(`Conectado exitosamente como ${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`);
                     connection.addHandler(onMessage, null, 'message', 'chat', null);
-                    sessionStorage.setItem('session', `${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`);
+                    localStorage.setItem('session', `${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`);
                     sendPresence('available');
                     resolve(); // Resolución exitosa
                     break;
@@ -87,7 +86,7 @@ const deleteAccount = () => {
         connection.sendIQ(iq, (response) => {
             console.log('Respuesta de eliminación de cuenta:', response);
             connection.disconnect();
-            sessionStorage.removeItem('session');
+            localStorage.removeItem('session');
             console.log('Cuenta eliminada y desconectado del servidor XMPP.');
             resolve('Cuenta eliminada y desconectado del servidor XMPP.');
         }, (error) => {
@@ -104,7 +103,7 @@ const logout = () => {
                 return reject(new Error('La conexión no está activa.'));
             }
             connection.disconnect();
-            sessionStorage.removeItem('session');
+            localStorage.removeItem('session');
             console.log('Sesión cerrada y desconectado del servidor XMPP.');
             resolve();
         } catch (e) {

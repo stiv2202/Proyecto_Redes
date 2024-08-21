@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@xmpp/client": "^0.13.1",
+    "crypto-js": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.1",
     "strophe.js": "^3.0.1",
     "strophejs-plugin-register": "^0.0.1"
   },

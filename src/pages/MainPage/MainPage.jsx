@@ -5,7 +5,7 @@ import { useContext } from 'react';
 import { logout, deleteAccount } from '../../hooks/hooks';
 
 function MainPage() {
-  const { connection } = useContext(ConnectionContext);
+  const { connection } = useContext(ConnectionContext)
 
   const handleLogout = () => {
     logout(connection)
