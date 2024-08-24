@@ -48,13 +48,14 @@ function MainPage() {
     setSelectedFile(event.target.files[0]);
   };
 
-  const handleFileSend = async () => {
+  const handleFileSend = () => {
     if (!selectedFile) return;
 
     try {
       const to = prompt('Ingrese el JID del contacto:');
-      await sendFile(connection, to, selectedFile);
-      console.log('Archivo enviado con éxito');
+      sendFile(connection, to, selectedFile)
+        .then(result => console.log(result))
+        .catch(error => console.error('Error al obtener detalles:', error));
     } catch (error) {
       console.error('Error al enviar el archivo:', error);
     }

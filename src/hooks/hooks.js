@@ -6,7 +6,10 @@ const sendPresence = (connection, type) => {
         console.error('No se puede enviar presencia. La conexión no está activa.');
         return;
     }
-    const presence = $pres({ type }).c('priority').t('50');
+
+    const presence = $pres({
+        type,
+    }).c('priority').t('50');
     connection.send(presence);
 };
 
@@ -23,7 +26,6 @@ const sendMessage = (connection, to, body) => {
             }).c('body').t(body);
 
             connection.send(message);
-            console.log('Mensaje enviado a:', to, 'con el cuerpo:', body);
             resolve(`Mensaje enviado a ${to}`);
         } catch (error) {
             console.error('Error al enviar el mensaje:', error);
@@ -142,8 +144,6 @@ const handlePresence = (connection, updatePresence) => {
         const type = presence.getAttribute('type') || 'available';
         const bareJid = Strophe.getBareJidFromJid(from);
 
-
-        // console.log(`Presencia recibida de ${from}:\nEstado:${type}`)
         updatePresence(bareJid, type);
 
         return true;
@@ -220,47 +220,81 @@ const handleIncomingMessages = (connection, onMessageReceived) => {
     connection.addHandler(messageHandler, null, 'message', null, null, null);
 };
 
-const sendFile = async (connection, to, file) => {
+const sendFile = (connection, to, file) => {
     return new Promise((resolve, reject) => {
         if (!connection || !connection.connected) {
             return reject(new Error('La conexión no está activa.'));
         }
 
-        // URL de subida del servidor
-        const uploadUrl = 'https://alumchat.lol:7443/httpfileupload/';
+        const uploadService = 'httpfileupload.alumchat.lol';
 
-        try {
-            const uniqueFileName = `${Date.now()}_${encodeURIComponent(file.name)}`;
-            const fullUrl = `${uploadUrl}${uniqueFileName}`;
+        const iq = $iq({ type: 'get', to: uploadService })
+            .c('request', { xmlns: 'urn:xmpp:http:upload:0' })
+            .c('filename').t(file.name).up()
+            .c('size').t(file.size.toString()).up()
+            .c('content-type').t(file.type);
 
-            // Subimos el archivo usando la URL proporcionada por el servidor
-            fetch(fullUrl, {
-                method: 'PUT',
-                body: file,
-                headers: {
-                    'Content-Type': file.type, // Asegura que se envíe el tipo MIME del archivo
-                }
-            })
-                .then((response) => {
+        connection.sendIQ(iq,
+            async function (result) {
+                const putUrl = result.querySelector('slot put').getAttribute('url');
+                const getUrl = result.querySelector('slot get').getAttribute('url');
+
+                try {
+                    const response = await fetch(putUrl, {
+                        method: 'PUT',
+                        body: file,
+                        headers: {
+                            'Content-Type': file.type
+                        }
+                    });
+
                     if (!response.ok) {
-                        throw new Error(`Error al subir el archivo: ${response.statusText}`);
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
 
-                    // Enviamos el mensaje con el enlace del archivo
-                    const message = $msg({ to: to, type: 'chat' })
-                        .c('body').t(`Nuevo mensaje: ${fullUrl}`).up()
+                    const message = $msg({ to: Strophe.getBareJidFromJid(to), type: 'chat' })
                         .c('x', { xmlns: 'jabber:x:oob' })
-                        .c('url').t(fullUrl);
+                        .c('url').t(getUrl).up()
 
                     connection.send(message);
-                    resolve('Archivo enviado con éxito');
-                })
-                .catch((error) => {
+                    resolve('Archivo enviado con éxito.')
+                } catch (error) {
+                    console.error('Error al subir el archivo:', error);
                     reject(new Error(`Error al subir el archivo: ${error.message}`));
-                });
-        } catch (error) {
-            reject(new Error(`Error al preparar la subida del archivo: ${error.message}`));
-        }
+                }
+            },
+            function (error) {
+                console.error('Error IQ completo:', error);
+                const errorText = error.getElementsByTagName('text')[0];
+                const errorMessage = errorText ? errorText.textContent : 'Error desconocido';
+                reject(new Error(`Error al solicitar slot de carga: ${errorMessage}`));
+            }
+        );
+    });
+};
+
+const discoverServices = (connection, serviceJid) => {
+    return new Promise((resolve, reject) => {
+        connection.sendIQ(
+            $iq({ to: serviceJid, type: 'get' }).c('query', { xmlns: 'http://jabber.org/protocol/disco#items' }),
+            function (result) {
+                const items = result.getElementsByTagName('item');
+                const services = Array.from(items).map(item => ({
+                    jid: item.getAttribute('jid'),
+                    node: item.getAttribute('node'),
+                }));
+                resolve(services);
+            },
+            function (error) {
+                if (error.getElementsByTagName('feature-not-implemented').length > 0) {
+                    console.error('El servicio no soporta disco#items:', error);
+                    // Considera intentar otra consulta aquí, como disco#info.
+                } else {
+                    console.error('Error al descubrir servicios:', error);
+                }
+                reject(error);
+            }
+        );
     });
 };
 
@@ -275,4 +309,5 @@ export {
     handlePresence,
     handleIncomingMessages,
     sendFile,
+    discoverServices,
 };

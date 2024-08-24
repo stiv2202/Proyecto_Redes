@@ -47,7 +47,7 @@ const ConnectionProvider = ({ children }) => {
                 return reject(new Error('La conexión no está disponible.'));
             }
 
-            connection.connect(`${user}@${consts.DOMAIN_NAME}`, password, (status) => {
+            connection.connect(`${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`, password, (status) => {
                 switch (status) {
                     case Strophe.Status.CONNECTED:
                         localStorage.setItem('session', encrypt(user, password));
