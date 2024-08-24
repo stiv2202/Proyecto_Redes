@@ -2,7 +2,6 @@
 import { createContext, useState, useEffect } from 'react';
 import { Strophe } from 'strophe.js';
 import consts from '../helpers/consts';
-import decodeHtmlEntities from '../helpers/decodeHtmlEntities';
 import PropTypes from 'prop-types';
 import { sendPresence } from '../hooks/hooks';
 import { decrypt, encrypt } from '../helpers/encryptCredentials';
@@ -30,7 +29,6 @@ const ConnectionProvider = ({ children }) => {
                 const { user, password } = decrypt(session);
                 login({ user, password }).then(() => {
                     setIsAuthenticated(true);
-                    console.log('connection >>>>>>>>', connection)
                 }).catch((err) => {
                     console.error('Error al iniciar sesión:', err);
                     setIsAuthenticated(false);
@@ -40,8 +38,6 @@ const ConnectionProvider = ({ children }) => {
             } else {
                 setIsLoading(false);
             }
-
-            connection.addHandler(onMessage, null, 'message', 'chat', null);
         }
     }, [connection]);
 
@@ -51,7 +47,7 @@ const ConnectionProvider = ({ children }) => {
                 return reject(new Error('La conexión no está disponible.'));
             }
 
-            connection.connect(`${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`, password, (status) => {
+            connection.connect(`${user}@${consts.DOMAIN_NAME}`, password, (status) => {
                 switch (status) {
                     case Strophe.Status.CONNECTED:
                         localStorage.setItem('session', encrypt(user, password));
@@ -81,17 +77,6 @@ const ConnectionProvider = ({ children }) => {
         });
     };
 
-    const onMessage = (message) => {
-        const from = message.getAttribute('from');
-        const bodyElement = message.getElementsByTagName('body')[0];
-        if (bodyElement) {
-            let body = Strophe.getText(bodyElement);
-            body = decodeHtmlEntities(body);
-            console.log(`Mensaje recibido de ${from}: ${body}`);
-        }
-        return true;
-    };
-
     const server = {
         connection,
         isAuthenticated,
@@ -106,9 +91,9 @@ const ConnectionProvider = ({ children }) => {
     );
 };
 
-export { ConnectionProvider };
-export default ConnectionContext;
-
 ConnectionProvider.propTypes = {
     children: PropTypes.node.isRequired,
 };
+
+export { ConnectionProvider };
+export default ConnectionContext;
