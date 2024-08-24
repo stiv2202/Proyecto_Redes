@@ -19,13 +19,16 @@ const sendMessage = (connection, to, body) => {
             return reject(new Error('La conexión no está activa.'));
         }
 
+        const isGroupChat = to.split('@')[1].split('.')[0] === 'conference'
+
         try {
             const message = $msg({
-                to: Strophe.getBareJidFromJid(to),
-                type: 'chat'
+                to: isGroupChat ? to : Strophe.getBareJidFromJid(to),
+                type: isGroupChat ? 'groupchat' : 'chat'
             }).c('body').t(body);
 
             connection.send(message);
+            console.log(`Mensaje enviado a ${to} (${isGroupChat ? 'grupo' : 'chat individual'})`);
             resolve(`Mensaje enviado a ${to}`);
         } catch (error) {
             console.error('Error al enviar el mensaje:', error);
@@ -122,7 +125,7 @@ const addContact = (connection, jid, name) => {
 
         connection.sendIQ(iq, (response) => {
             console.log('Respuesta de agregar contacto:', response);
-            const subscribePresence = $pres({ to: jid, type: 'subscribe' });
+            const subscribePresence = $pres({ to: jid, type: 'subscribe' }).c('priority').t('50');
             connection.send(subscribePresence);
 
             resolve('Contacto agregado y suscripción a la presencia solicitada.');
@@ -198,25 +201,29 @@ const handleIncomingMessages = (connection, onMessageReceived) => {
 
     const messageHandler = (msg) => {
         const from = msg.getAttribute('from');
+        const type = msg.getAttribute('type');
         const body = msg.getElementsByTagName('body')[0];
         const oob = msg.getElementsByTagName('x')[0];
 
-        if (body && oob) {
+        if (body) {
             const messageText = Strophe.getText(body);
-            const fileUrl = oob.getElementsByTagName('url')[0];
-            if (fileUrl) {
-                const url = Strophe.getText(fileUrl);
-                onMessageReceived(from, messageText, url);
+            let url = null;
+
+            if (oob) {
+                const fileUrl = oob.getElementsByTagName('url')[0];
+                if (fileUrl) {
+                    url = Strophe.getText(fileUrl);
+                }
             }
-        } else if (body) {
-            const messageText = Strophe.getText(body);
-            onMessageReceived(from, messageText);
+
+            const sender = type === 'groupchat' ? Strophe.getResourceFromJid(from) : Strophe.getBareJidFromJid(from);
+            const roomJid = type === 'groupchat' ? Strophe.getBareJidFromJid(from) : null;
+
+            onMessageReceived(sender, messageText, url, type === 'groupchat', roomJid);
         }
 
         return true;
     };
-
-    // Añadir el manejador para todos los mensajes de tipo 'message'
     connection.addHandler(messageHandler, null, 'message', null, null, null);
 };
 
@@ -226,6 +233,7 @@ const sendFile = (connection, to, file) => {
             return reject(new Error('La conexión no está activa.'));
         }
 
+        const isGroupChat = to.split('@')[1].split('.')[0] === 'conference'
         const uploadService = 'httpfileupload.alumchat.lol';
 
         const iq = $iq({ type: 'get', to: uploadService })
@@ -252,7 +260,10 @@ const sendFile = (connection, to, file) => {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
 
-                    const message = $msg({ to: Strophe.getBareJidFromJid(to), type: 'chat' })
+                    const message = $msg({
+                        to: isGroupChat ? to : Strophe.getBareJidFromJid(to),
+                        type: isGroupChat ? 'groupchat' : 'chat'
+                    })
                         .c('x', { xmlns: 'jabber:x:oob' })
                         .c('url').t(getUrl).up()
 
@@ -298,6 +309,94 @@ const discoverServices = (connection, serviceJid) => {
     });
 };
 
+const createGroupChatRoom = (connection, roomName, nickname) => {
+    return new Promise((resolve, reject) => {
+        if (!connection || !connection.connected) {
+            return reject(new Error('La conexión no está activa.'));
+        }
+
+        const roomJid = `${roomName}@conference.${consts.DOMAIN_NAME}`;
+
+        // Unirse a la sala antes de configurarla
+        const presence = $pres({ to: `${roomJid}/${nickname}` })
+            .c('x', { xmlns: 'http://jabber.org/protocol/muc' });
+
+        connection.send(presence.tree());
+
+        // Esperar un poco para asegurarse de que se ha unido a la sala
+        setTimeout(() => {
+            const iq = $iq({ type: 'set', to: roomJid, id: 'create_room' })
+                .c('query', { xmlns: 'http://jabber.org/protocol/muc#owner' })
+                .c('x', { xmlns: 'jabber:x:data', type: 'submit' })
+                .c('field', { var: 'FORM_TYPE' })
+                .c('value').t('http://jabber.org/protocol/muc#roomconfig').up()
+                .up()
+                .c('field', { var: 'muc#roomconfig_roomname' })
+                .c('value').t(roomName).up()
+                .c('field', { var: 'muc#roomconfig_nickname' })
+                .c('value').t(nickname);
+
+            connection.sendIQ(iq,
+                (response) => {
+                    console.log('Sala grupal creada:', response);
+                    resolve('Sala grupal creada con éxito.');
+                },
+                (error) => {
+                    console.error('Error al crear la sala grupal:', error);
+                    reject(new Error(`Error al crear la sala grupal: ${error.condition}`));
+                }
+            );
+        }, 1000); // Esperar 1 segundo (puede ajustarse según sea necesario)
+    });
+};
+
+
+const joinGroupChatRoom = (connection, roomName, nickname) => {
+    return new Promise((resolve, reject) => {
+        if (!connection || !connection.connected) {
+            return reject(new Error('La conexión no está activa.'));
+        }
+
+        const roomJid = `${roomName}@conference.${consts.DOMAIN_NAME}`;
+        const presence = $pres({ to: `${roomJid}/${nickname}` })
+            .c('x', { xmlns: 'http://jabber.org/protocol/muc' })
+            .up()
+            .c('priority').t('50');
+
+        connection.send(presence);
+        resolve(`Unido a la sala ${roomName} como ${nickname}`);
+    });
+};
+
+const listAvailableRooms = (connection) => {
+    return new Promise((resolve, reject) => {
+        if (!connection || !connection.connected) {
+            return reject(new Error('La conexión no está activa.'));
+        }
+
+        const discoServiceJid = 'conference.' + consts.DOMAIN_NAME;
+        const iq = $iq({ type: 'get', to: discoServiceJid })
+            .c('query', { xmlns: 'http://jabber.org/protocol/disco#items' });
+
+        connection.sendIQ(iq,
+            (result) => {
+                const items = result.getElementsByTagName('item');
+                const rooms = Array.from(items).map(item => {
+                    return ({
+                        jid: item.getAttribute('jid'),
+                        name: item.getAttribute('name'),
+                    })
+                });
+                resolve(rooms);
+            },
+            (error) => {
+                console.error('Error al listar las salas disponibles:', error);
+                reject(new Error(`Error al listar las salas disponibles: ${error.condition}`));
+            }
+        );
+    });
+};
+
 export {
     logout,
     sendMessage,
@@ -310,4 +409,7 @@ export {
     handleIncomingMessages,
     sendFile,
     discoverServices,
+    createGroupChatRoom,
+    joinGroupChatRoom,
+    listAvailableRooms
 };

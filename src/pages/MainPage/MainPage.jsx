@@ -10,20 +10,24 @@ import {
   sendMessage,
   handleIncomingMessages,
   sendFile,
+  listAvailableRooms,
+  joinGroupChatRoom,
+  createGroupChatRoom,
 } from '../../hooks/hooks';
 import styles from './MainPage.module.css';
 
 function MainPage() {
   const { connection, isAuthenticated } = useContext(ConnectionContext);
   const [contacts, setContacts] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentContact, setCurrentContact] = useState(null);
   const [presences, setPresences] = useState({});
 
   useEffect(() => {
     if (connection && connection.connected) {
-      const messageHandler = (jid, messageText, url) => {
-        console.log(`Nuevo mensaje de ${jid}: ${messageText} ${url && url !== messageText ? `, ${url}` : ''}`);
+      const messageHandler = (jid, messageText, url, _, roomJid) => {
+        console.log(`Nuevo mensaje ${roomJid ? `(grupo ${roomJid}) ` : ''}de ${jid}: ${messageText} ${url && url !== messageText ? `, ${url}` : ''}`);
       };
 
       const presenceHandler = (jid, presenceType) => {
@@ -73,6 +77,12 @@ function MainPage() {
       .catch(error => console.error('Error al obtener contactos:', error));
   };
 
+  const handleGetRooms = () => {
+    listAvailableRooms(connection)
+      .then(result => setRooms(result))
+      .catch(error => console.error('Error al obtener salas disponibles:', error));
+  };
+
   const handleLogout = () => {
     logout(connection)
       .then(() => window.location.reload())
@@ -103,6 +113,28 @@ function MainPage() {
         .catch(error => alert(error.message));
     }
   };
+  
+  const handleCreateRoom = () => {
+    const room = prompt('Ingrese el nombre de la sala:');
+    if (room) {
+      let nickname = prompt('ingrese su nickname (opcional):');
+      if (!nickname) nickname = connection.jid.split('@')[0]
+      createGroupChatRoom(connection, room, nickname)
+        .then(message => alert(message))
+        .catch(error => alert(error.message));
+    }
+  };
+  
+  const handleJoinRoom = (roomName) => {
+
+    console.log(connection)
+
+    let nickname = prompt('Ingrese el nickname a utilizar (opcional):');
+    if (!nickname) nickname = connection.jid.split('@')[0]
+    joinGroupChatRoom(connection, roomName, nickname)
+      .then(message => alert(message))
+      .catch(error => alert(error.message));
+  };
 
   return (
     <div className={styles.container}>
@@ -113,18 +145,30 @@ function MainPage() {
         </button>
         <button type="button" onClick={handleDeleteAccount}>Eliminar Cuenta</button>
         <button type="button" onClick={handleGetContacts}>Obtener contactos</button>
+        <button type="button" onClick={handleGetRooms}>Obtener salas disponibles</button>
         <button onClick={handleAddContact}>Agregar Contacto</button>
         <button onClick={handleSendMessage}>Enviar mensaje</button>
+        <button onClick={handleCreateRoom}>Crear nueva sala</button>
         <input type="file" onChange={handleFileChange} />
         <button onClick={handleFileSend}>Enviar archivo</button>
       </div>
       <div>
+        {contacts && contacts.length >0 &&
+          <h2>Lista de contactos</h2>}
         {contacts.map(contact => (
           <div key={contact.jid}>
             <button onClick={() => handleGetDetails(contact.jid)}>{contact.jid}</button>
             <span>
               {presences[contact.jid] ? ` - ${presences[contact.jid]}` : ' - unknown'}
             </span>
+          </div>
+        ))}
+        {rooms && rooms.length >0 &&
+          <h2>Salas disponibles</h2>}
+        {rooms.map(room => (
+          <div key={room.jid}>
+            <h4>{room.name}</h4>
+            <button onClick={() => handleJoinRoom(room.name)}>{room.jid}</button>
           </div>
         ))}
       </div>
