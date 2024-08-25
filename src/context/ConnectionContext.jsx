@@ -5,69 +5,53 @@ import consts from '../helpers/consts';
 import PropTypes from 'prop-types';
 import { sendPresence } from '../hooks/hooks';
 import { decrypt, encrypt } from '../helpers/encryptCredentials';
+import XMPPError from './../helpers/XMPPError'
+import 'strophe-plugin-register';
+
+// Strophe.addConnectionPlugin('register', Strophe.RegisterPlugin);
+// console.log('plugin: ',Strophe.RegisterPlugin);
 
 const ConnectionContext = createContext();
 
 const ConnectionProvider = ({ children }) => {
-    const [connection, setConnection] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [connection] = useState(() => new Strophe.Connection(consts.XMPP_SERVER));
+    const [isConnectionReady, setIsConnectionReady] = useState(false);
+    const [clientPresence, setClientPresence] = useState(undefined);
 
     useEffect(() => {
-        const conn = new Strophe.Connection(consts.XMPP_SERVER);
-        setConnection(conn);
+        const session = localStorage.getItem('session');
 
-        return () => {
-            if (conn) conn.disconnect();
-        };
-    }, []);
-
-    useEffect(() => {
-        if (connection) {
-            const session = localStorage.getItem('session');
-            if (session) {
-                const { user, password } = decrypt(session);
-                login({ user, password }).then(() => {
-                    setIsAuthenticated(true);
-                }).catch((err) => {
-                    console.error('Error al iniciar sesión:', err);
-                    setIsAuthenticated(false);
-                }).finally(() => {
-                    setIsLoading(false);
-                });
-            } else {
-                setIsLoading(false);
-            }
+        if (session) {
+            const { user, password } = decrypt(session);
+            login({ user, password }).then(() => {
+                setIsConnectionReady(true);
+            }).catch((err) => {
+                console.error('Error al iniciar sesión:', err);
+                setIsConnectionReady(true);
+            });
+        } else {
+            setIsConnectionReady(true);
         }
-    }, [connection]);
+    }, []);
 
     const login = ({ user, password }) => {
         return new Promise((resolve, reject) => {
-            if (!connection) {
-                return reject(new Error('La conexión no está disponible.'));
-            }
-
             connection.connect(`${user}@${consts.DOMAIN_NAME}/${consts.RESOURCE}`, password, (status) => {
                 switch (status) {
                     case Strophe.Status.CONNECTED:
                         localStorage.setItem('session', encrypt(user, password));
                         sendPresence(connection, 'available');
+                        setClientPresence('available');
                         resolve();
                         break;
                     case Strophe.Status.AUTHFAIL:
-                        console.error('Falló la autenticación.');
-                        setIsAuthenticated(false);
-                        reject(new Error('Falló la autenticación.'));
+                        reject(new XMPPError('Credenciales incorrectas.', Strophe.Status.AUTHFAIL));
                         break;
                     case Strophe.Status.CONNFAIL:
-                        console.error('Falló la conexión al servidor XMPP.');
-                        setIsAuthenticated(false);
-                        reject(new Error('Falló la conexión al servidor XMPP.'));
+                        reject(new XMPPError('Falló la conexión al servidor XMPP.', Strophe.Status.CONNFAIL));
                         break;
                     case Strophe.Status.DISCONNECTED:
-                        console.log('Desconectado del servidor XMPP.');
-                        setIsAuthenticated(false);
-                        reject(new Error('Desconectado del servidor XMPP.'));
+                        reject(new XMPPError('Desconectado del servidor XMPP.', Strophe.Status.DISCONNECTED));
                         break;
                     default:
                         console.log(`Estado de conexión: ${status}`);
@@ -78,11 +62,18 @@ const ConnectionProvider = ({ children }) => {
     };
 
     const server = {
+        clientPresence,
+        setClientPresence,
         connection,
-        isAuthenticated,
-        isLoading,
         login,
+        isConnectionReady,
     };
+
+    if (!isConnectionReady) {
+        return (
+            <>Cargando...</>
+        );
+    }
 
     return (
         <ConnectionContext.Provider value={server}>

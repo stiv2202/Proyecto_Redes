@@ -1,14 +1,29 @@
-/* eslint-disable no-unused-vars */
-// import { useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
-import styles from './LoginPage.module.css';
+import InputText from '../../components/InputText';
+import styles from './LoginPage.module.scss';
+import Title from '../../components/Title/Title';
+// import AnchorButton from '../../components/AnchorButton';
+import MainButton from '../../components/MainButton';
+import { DotLoader } from 'react-spinners';
+import { useNavigate } from 'react-router-dom';
 import ConnectionContext from '../../context/ConnectionContext';
+import XMPPError from '../../helpers/XMPPError';
 
 function LoginPage() {
   const { login } = useContext(ConnectionContext);
-  const [form, setForm] = useState({ user: '', password: '' })
+  const navigate = useNavigate();
+  const [error, setError] = useState(undefined);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    user: "",
+    password: ""
+  })
   const [errors, setErrors] = useState({});
-  // const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((lastValue) => ({ ...lastValue, [name]: value }));
+  }
 
   const clearErrors = () => {
     setErrors({});
@@ -18,11 +33,17 @@ function LoginPage() {
     setErrors((lastVal) => ({ ...lastVal, [e.target.name]: null }));
   };
 
-  const validateEmail = () => {
-    if (form?.user?.trim().length > 0) return true;
-    setErrors((lastVal) => ({ ...lastVal, user: 'El email es obligatorio.' }));
-    return false;
-  };
+  const validateUser = () => {
+    if (form?.user?.trim().length === 0) {
+      setErrors((lastVal) => ({ ...lastVal, user: 'El usuario es obligatorio.' }));
+      return false
+    }
+    if (form?.user?.includes('@')) {
+      setErrors((lastVal) => ({ ...lastVal, user: 'Ingresa tu usuario sin dominio.' }));
+      return false;
+    }
+    return true;
+  }
 
   const validatePassword = () => {
     if (form?.password?.trim().length > 0) return true;
@@ -30,51 +51,57 @@ function LoginPage() {
     return false;
   };
 
-  const handleChange = (e) => {
-    const field = e.target.name;
-    const { value } = e.target;
-    setForm((lastValue) => ({ ...lastValue, [field]: value }));
-  }
-
   const handleSubmit = (e) => {
     e.preventDefault();
     clearErrors();
 
-    if (!(validateEmail() && validatePassword())) return;
+    if (!(validateUser() && validatePassword())) return;
+
+    setLoading(true)
 
     login(form).then(() => {
-      window.location.reload();
+      navigate('/')
+      setLoading(false)
     }).catch((err) => {
-      console.error('Error al iniciar sesión:', err);
+      setLoading(false)
+      if (err instanceof XMPPError)
+        setError(err)
+      else {
+        console.error('Error al iniciar sesión:', err);
+      }
     });
+
+
   };
 
   return (
     <div className={styles.container}>
       <form className={styles.form} onSubmit={handleSubmit}>
-        <input
-          type="text"
-          id="user"
+        <Title title='Iniciar Sesión' className={styles.title} />
+        <InputText
+          title="Usuario"
           name="user"
-          className={styles.input}
           onChange={handleChange}
           value={form.user}
+          error={errors?.user}
+          onBlur={validateUser}
           onFocus={clearError}
         />
-        <input
-          type="password"
-          id="password"
+        <InputText
+          title="Contraseña"
           name="password"
-          className={styles.input}
           onChange={handleChange}
           value={form.password}
+          error={errors?.password}
+          onBlur={validatePassword}
           onFocus={clearError}
+          type="password"
         />
-        <button type="submit">Iniciar Sesión</button>
+        {error && <div className={styles.errorMessage}>{error instanceof XMPPError ? error.message : 'Ocurrió un error.'}</div>}
+        {!loading && (<MainButton text="Acceder" type="submit" />)}
+        {loading && <DotLoader color="#26688c" />}
       </form>
-      {/* <button onClick={() => navigate('/signup')} className={styles.signupButton}>
-        Crear una cuenta
-      </button> */}
+      {/* <p className={styles.text}>¿No tienes una cuenta? <AnchorButton text="¡Regístrate!" link='/signup' /></p> */}
     </div>
   )
 

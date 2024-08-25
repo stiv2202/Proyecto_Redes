@@ -13,11 +13,12 @@ import {
   listAvailableRooms,
   joinGroupChatRoom,
   createGroupChatRoom,
+  sendPresence,
 } from '../../hooks/hooks';
-import styles from './MainPage.module.css';
+import styles from './MainPage.module.scss';
 
 function MainPage() {
-  const { connection, isAuthenticated } = useContext(ConnectionContext);
+  const { connection, isAuthenticated, clientPresence } = useContext(ConnectionContext);
   const [contacts, setContacts] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -25,16 +26,21 @@ function MainPage() {
   const [presences, setPresences] = useState({});
 
   useEffect(() => {
+    console.log('connection: ', connection)
     if (connection && connection.connected) {
       const messageHandler = (jid, messageText, url, _, roomJid) => {
         console.log(`Nuevo mensaje ${roomJid ? `(grupo ${roomJid}) ` : ''}de ${jid}: ${messageText} ${url && url !== messageText ? `, ${url}` : ''}`);
       };
 
       const presenceHandler = (jid, presenceType) => {
-        setPresences(prevPresences => ({
-          ...prevPresences,
-          [jid]: presenceType,
-        }));
+
+        if (jid === connection.jid.split('/')[0] && presenceType !== clientPresence)
+          sendPresence(connection, clientPresence)
+        else
+          setPresences(prevPresences => ({
+            ...prevPresences,
+            [jid]: presenceType,
+          }));
       };
 
       handleIncomingMessages(connection, messageHandler);
@@ -46,7 +52,7 @@ function MainPage() {
         connection.deleteHandler(presenceHandler);
       };
     }
-  }, [connection, isAuthenticated]);
+  }, [clientPresence, connection, isAuthenticated]);
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -113,7 +119,7 @@ function MainPage() {
         .catch(error => alert(error.message));
     }
   };
-  
+
   const handleCreateRoom = () => {
     const room = prompt('Ingrese el nombre de la sala:');
     if (room) {
@@ -124,7 +130,7 @@ function MainPage() {
         .catch(error => alert(error.message));
     }
   };
-  
+
   const handleJoinRoom = (roomName) => {
 
     console.log(connection)
@@ -138,7 +144,7 @@ function MainPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Bienvenido!</h1>
+      <h1>Bienvenido {connection.jid.split('@')[0]}!</h1>
       <div>
         <button onClick={handleLogout} className={styles.logoutButton}>
           Cerrar Sesión
@@ -153,7 +159,7 @@ function MainPage() {
         <button onClick={handleFileSend}>Enviar archivo</button>
       </div>
       <div>
-        {contacts && contacts.length >0 &&
+        {contacts && contacts.length > 0 &&
           <h2>Lista de contactos</h2>}
         {contacts.map(contact => (
           <div key={contact.jid}>
@@ -163,7 +169,7 @@ function MainPage() {
             </span>
           </div>
         ))}
-        {rooms && rooms.length >0 &&
+        {rooms && rooms.length > 0 &&
           <h2>Salas disponibles</h2>}
         {rooms.map(room => (
           <div key={room.jid}>

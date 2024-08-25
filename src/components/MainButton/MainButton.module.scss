@@ -1,0 +1,19 @@
+.button {
+    outline: none;
+    margin-top: 20px;
+    font-size: 15px;
+    padding: 15px;
+    width: 50%;
+    border-radius: 50px;
+    border: none;
+    color: white;
+    background-color: #26688c;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 18px 50px -10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Agrega la transición */
+}
+
+.button:hover {
+    background-color: #9ec3d6;
+    color: black;
+}

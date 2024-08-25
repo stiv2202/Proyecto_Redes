@@ -1,86 +1,113 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import InputText from '../../components/InputText';
+import styles from './SignupPage.module.scss';
+import Title from '../../components/Title/Title';
+import AnchorButton from '../../components/AnchorButton';
+import MainButton from '../../components/MainButton';
+import { DotLoader } from 'react-spinners';
 import { useNavigate } from 'react-router-dom';
-import styles from './SignupPage.module.css';
-import { register } from '../../helpers/server';
+import ConnectionContext from '../../context/ConnectionContext';
+import XMPPError from '../../helpers/XMPPError';
+import { registerAccount } from '../../hooks/hooks'
 
 function SignupPage() {
-  const [form, setForm] = useState({ user: '', password: '', confirmPassword: '' });
-  const [errors, setErrors] = useState({});
+  const { connection } = useContext(ConnectionContext);
   const navigate = useNavigate();
+  const [error, setError] = useState(undefined);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    user: "",
+    password: ""
+  })
+  const [errors, setErrors] = useState({});
+
+  console.log('connection: ', connection)
 
   const handleChange = (e) => {
-    const field = e.target.name;
-    const { value } = e.target;
-    setForm((lastValue) => ({ ...lastValue, [field]: value }));
+    const { name, value } = e.target;
+    setForm((lastValue) => ({ ...lastValue, [name]: value }));
+  }
+
+  const clearErrors = () => {
+    setErrors({});
   };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const clearError = (e) => {
+    setErrors((lastVal) => ({ ...lastVal, [e.target.name]: null }));
+  };
 
-    if (!form.user.trim()) {
-      newErrors.user = 'El nombre de usuario es obligatorio.';
+  const validateUser = () => {
+    if (form?.user?.trim().length === 0) {
+      setErrors((lastVal) => ({ ...lastVal, user: 'El usuario es obligatorio.' }));
+      return false
     }
-
-    if (!form.password.trim()) {
-      newErrors.password = 'La contraseña es obligatoria.';
-    } else if (form.password !== form.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden.';
+    if (form?.user?.includes('@')) {
+      setErrors((lastVal) => ({ ...lastVal, user: 'Ingresa tu usuario sin dominio.' }));
+      return false;
     }
+    return true;
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validatePassword = () => {
+    if (form?.password?.trim().length > 0) return true;
+    setErrors((lastVal) => ({ ...lastVal, password: 'La contraseña es obligatoria.' }));
+    return false;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    clearErrors();
 
-    register(form)
-      .then(() => {
-        console.log('Cuenta creada exitosamente');
-        navigate('/'); // Redirigir al inicio de sesión
-      })
-      .catch((error) => {
-        console.error('Error al registrar:', error);
-        setErrors((lastErrors) => ({ ...lastErrors, server: error }));
-      });
+    if (!(validateUser() && validatePassword())) return;
+
+    setLoading(true)
+
+    registerAccount(connection, form).then(() => {
+      navigate('/')
+      setLoading(false)
+    }).catch((err) => {
+      setLoading(false)
+      if (err instanceof XMPPError)
+        setError(err)
+      else {
+        console.error('Error al registrar usuario:', err);
+      }
+    });
+
+
   };
 
   return (
     <div className={styles.container}>
       <form className={styles.form} onSubmit={handleSubmit}>
-        <input
-          type="text"
-          id="user"
+        <Title title='Iniciar Sesión' className={styles.title} />
+        <InputText
+          title="Usuario"
           name="user"
-          className={styles.input}
           onChange={handleChange}
           value={form.user}
+          error={errors?.user}
+          onBlur={validateUser}
+          onFocus={clearError}
         />
-        {errors.user && <p className={styles.error}>{errors.user}</p>}
-        <input
-          type="password"
-          id="password"
+        <InputText
+          title="Contraseña"
           name="password"
-          className={styles.input}
           onChange={handleChange}
           value={form.password}
-        />
-        {errors.password && <p className={styles.error}>{errors.password}</p>}
-        <input
+          error={errors?.password}
+          onBlur={validatePassword}
+          onFocus={clearError}
           type="password"
-          id="confirmPassword"
-          name="confirmPassword"
-          className={styles.input}
-          onChange={handleChange}
-          value={form.confirmPassword}
         />
-        {errors.confirmPassword && <p className={styles.error}>{errors.confirmPassword}</p>}
-        <button type="submit">Registrarse</button>
-        {errors.server && <p className={styles.error}>{errors.server}</p>}
+        {error && <div className={styles.errorMessage}>{error instanceof XMPPError ? error.message : 'Ocurrió un error.'}</div>}
+        {!loading && (<MainButton text="Acceder" type="submit" />)}
+        {loading && <DotLoader color="#26688c" />}
       </form>
+      <p className={styles.text}>¿Ya tienes una cuenta? <AnchorButton text="¡Inicia sesión aquí!" link='/login' /></p>
     </div>
-  );
+  )
+
 }
 
 export default SignupPage;

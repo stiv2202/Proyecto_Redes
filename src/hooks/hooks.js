@@ -147,6 +147,7 @@ const handlePresence = (connection, updatePresence) => {
         const type = presence.getAttribute('type') || 'available';
         const bareJid = Strophe.getBareJidFromJid(from);
 
+        console.log(`Presencia recibida de ${bareJid}: ${type}`)
         updatePresence(bareJid, type);
 
         return true;
@@ -299,7 +300,6 @@ const discoverServices = (connection, serviceJid) => {
             function (error) {
                 if (error.getElementsByTagName('feature-not-implemented').length > 0) {
                     console.error('El servicio no soporta disco#items:', error);
-                    // Considera intentar otra consulta aquí, como disco#info.
                 } else {
                     console.error('Error al descubrir servicios:', error);
                 }
@@ -315,15 +315,13 @@ const createGroupChatRoom = (connection, roomName, nickname) => {
             return reject(new Error('La conexión no está activa.'));
         }
 
-        const roomJid = `${roomName}@conference.${consts.DOMAIN_NAME}`;
+        const roomJid = `${roomName.replaceAll(' ', '_')}@conference.${consts.DOMAIN_NAME}`;
 
-        // Unirse a la sala antes de configurarla
         const presence = $pres({ to: `${roomJid}/${nickname}` })
             .c('x', { xmlns: 'http://jabber.org/protocol/muc' });
 
         connection.send(presence.tree());
 
-        // Esperar un poco para asegurarse de que se ha unido a la sala
         setTimeout(() => {
             const iq = $iq({ type: 'set', to: roomJid, id: 'create_room' })
                 .c('query', { xmlns: 'http://jabber.org/protocol/muc#owner' })
@@ -346,7 +344,7 @@ const createGroupChatRoom = (connection, roomName, nickname) => {
                     reject(new Error(`Error al crear la sala grupal: ${error.condition}`));
                 }
             );
-        }, 1000); // Esperar 1 segundo (puede ajustarse según sea necesario)
+        }, 1000);
     });
 };
 
@@ -397,6 +395,36 @@ const listAvailableRooms = (connection) => {
     });
 };
 
+const registerAccount = (connection, username, password) => {
+    return new Promise((resolve, reject) => {
+        if (!connection) {
+            return reject(new Error('La conexión no está disponible.'));
+        }
+
+        const domain = consts.DOMAIN_NAME;
+        const jid = `${username}@${domain}`;
+
+        console.log('prevtoconnect')
+
+        connection.register.connect(consts.XMPP_SERVER, (status) => {
+            if (status === Strophe.Status.REGISTER) {
+                connection.register.fields.username = jid;
+                connection.register.fields.password = password;
+                connection.register.submit();
+            } else if (status === Strophe.Status.REGISTERED) {
+                console.log("Registration successful");
+                connection.authenticate();
+            } else if (status === Strophe.Status.CONFLICT) {
+                console.log("User already exists");
+            } else if (status === Strophe.Status.NOTACCEPTABLE) {
+                console.log("Registration form not properly filled out.");
+            } else if (status === Strophe.Status.REGIFAIL) {
+                console.log("The Server does not support In-Band Registration");
+            }
+        });
+    });
+};
+
 export {
     logout,
     sendMessage,
@@ -411,5 +439,6 @@ export {
     discoverServices,
     createGroupChatRoom,
     joinGroupChatRoom,
-    listAvailableRooms
+    listAvailableRooms,
+    registerAccount
 };

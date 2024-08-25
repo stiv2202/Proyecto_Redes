@@ -1,22 +1,25 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from '../../pages/LoginPage';
+// import SignupPage from '../../pages/SignupPage';
 import MainPage from '../../pages/MainPage';
-import ConnectionContext from '../../context/ConnectionContext';
-import { useContext } from 'react';
+import useConnection from './../../hooks/useConnection'
+import { Navigate } from 'react-router-dom';
 
 function IndexPage() {
-  const { isAuthenticated, isLoading } = useContext(ConnectionContext);
-
-  if (isLoading) {
-    return <div>Cargando...</div>;
-  }
+  const connection = useConnection();
+  const connected = connection ? connection.connected : undefined
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={isAuthenticated ? <MainPage /> : <LoginPage />} />
-        <Route path="/login" element={isAuthenticated ? <MainPage /> : <LoginPage />} />
-        {/* <Route path="/signup" element={isAuthenticated ? <MainPage /> : <SignupPage />} /> */}
+        <Route path="/" element={connected ? <MainPage /> : <LoginPage />} />
+        <Route path="/login"
+          element={connected ? <Navigate to="/" /> : <LoginPage />}
+        />
+        {/* <Route path="/signup"
+          element={connected ? <Navigate to="/" /> : <SignupPage />}
+        /> */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );
