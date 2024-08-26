@@ -1,25 +1,28 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import LoginPage from '../../pages/LoginPage';
-// import SignupPage from '../../pages/SignupPage';
-import MainPage from '../../pages/MainPage';
-import useConnection from './../../hooks/useConnection'
-import { Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Importa los componentes necesarios para la gestión de rutas.
+import LoginPage from '../../pages/LoginPage'; // Importa la página de inicio de sesión.
+import MainPage from '../../pages/MainPage'; // Importa la página principal.
+import useConnection from './../../hooks/useConnection'; // Importa el hook personalizado para obtener el estado de conexión.
+import { Navigate } from 'react-router-dom'; // Importa el componente para redireccionar rutas.
 
 function IndexPage() {
-  const connection = useConnection();
-  const connected = connection ? connection.connected : undefined
+  const connection = useConnection(); // Obtiene el objeto de conexión del hook useConnection.
+  const connected = connection ? connection.connected : undefined; // Determina si la conexión está activa.
 
   return (
-    <Router>
+    <Router> {/* Configura el enrutador para la aplicación. */}
       <Routes>
+        {/* Define las rutas de la aplicación */}
+
         <Route path="/" element={connected ? <MainPage /> : <LoginPage />} />
+        {/* Redirige a la página principal si la conexión está activa, o muestra la página de inicio de sesión si no lo está. */}
+
         <Route path="/login"
           element={connected ? <Navigate to="/" /> : <LoginPage />}
         />
-        {/* <Route path="/signup"
-          element={connected ? <Navigate to="/" /> : <SignupPage />}
-        /> */}
+        {/* Redirige a la página principal si la conexión está activa, o muestra la página de inicio de sesión si no lo está. */}
+        
         <Route path="*" element={<Navigate to="/" />} />
+        {/* Redirige a la página principal para cualquier ruta no definida. */}
       </Routes>
     </Router>
   );

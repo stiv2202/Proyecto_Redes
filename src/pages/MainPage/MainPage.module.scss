@@ -1,0 +1,182 @@
+.mainContainer {
+  height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.contactsSection {
+  flex: 0.8;
+  overflow-y: scroll;
+}
+
+.chatSection {
+  flex: 1;
+  background: rgb(158, 195, 214);
+  background: linear-gradient(145deg, rgba(158, 195, 214, 1) 0%, rgba(151, 191, 213, 1) 28%, rgba(214, 240, 255, 1) 85%, rgba(192, 220, 236, 1) 100%);
+  display: flex;
+}
+
+.chatSectionPlaceholder {
+  width: 35%;
+}
+
+.placeholderContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.placeholderContainer p {
+  font-size: 20px;
+  max-width: 45%;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-weight: bold;
+  color: #26688C;
+  margin-top: 15px;
+}
+
+.chatContent {
+  width: 100%;
+}
+
+.messages {
+  height: 80%;
+}
+
+.contactInfo {
+  height: 8%;
+}
+
+.inputMessageContent {
+  height: 12%;
+}
+
+.contactInfo {
+  z-index: 9999;
+  position: relative;
+}
+
+.contactInfo,
+.inputMessageContent {
+  background: #26688C;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  padding: 5px 15px;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  gap: 5px;
+}
+
+.contactInfo h3,
+.contactInfo p,
+.contactInfo span {
+  margin: auto 0;
+}
+
+.contactInfo p {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+.presence {
+  font-size: 16px;
+  border: 1px solid black;
+  padding: 0 10px;
+  border-radius: 10px;
+  display: flex;
+  gap: 5px
+}
+
+.presenceIndicator {
+  border-radius: 100%;
+  border: 0.8px solid black;
+  height: 10px;
+  width: 10px;
+  display: block;
+}
+
+.inputMessage {
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  padding: 5px 10px;
+  width: 90%;
+  font-size: 20px;
+}
+
+.sendButton {
+  width: 5%;
+  background: none;
+  outline: none;
+  border: none;
+  color: #DDEAF1;
+  font-size: 25px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.formMessage {
+  display: flex;
+  width: 100%;
+}
+
+.loadingButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+}
+
+.loadingButton span {
+  width: 29px !important;
+  height: 29px !important;
+}
+
+.chatElement p {
+  margin: 0;
+  word-break: break-all;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column-reverse;
+  box-sizing: border-box;
+  padding: 10px 20px;
+  gap: 20px;
+  overflow-y: scroll;
+}
+
+.chatElement {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+}
+
+.sentContainer {
+  align-items: end;
+}
+
+.receivedContainer {
+  align-items: start;
+}
+
+.sent,
+.received {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.sent {
+  background: #3bb3f4;
+}
+
+.received {
+  background: #a9bfca;
+}
