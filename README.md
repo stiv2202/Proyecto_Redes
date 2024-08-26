@@ -7,7 +7,6 @@ Welcome to the Chat Application! This application is designed for real-time mess
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [API Endpoints](#api-endpoints)
 - [Configuration](#configuration)
 - [License](#license)
 
