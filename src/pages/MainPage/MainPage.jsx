@@ -59,6 +59,7 @@ function MainPage() {
 
   // Limpia el chat actual cuando se cambia el contacto seleccionado.
   useEffect(() => {
+    console.log('currentContact: ', currentContact)
     if (currentContact) {
       setTimeout(() => {
         setCurrentChat([]);
@@ -441,9 +442,9 @@ function MainPage() {
               {/* Muestra detalles del contacto seleccionado si existe */}
               <div className={`${styles.contactDetailContainer} ${exposerOpen ? styles.contactDetailOpen : ''}`}>
                 <div className={styles.contactDetail}>
-                  <h2>Detalles de contacto.</h2>
+                  <h2>Detalles de contacto:</h2>
                   <p><strong>JID:</strong> {currentContact.jid}</p>
-                  <p><strong>NOMBRE:</strong> {currentContact.name ?? currentContact.jid.split('@')[0]}</p>
+                  <p><strong>NOMBRE:</strong> {currentContact.name !== '' ? currentContact.name : currentContact.jid.split('@')[0]}</p>
                   <p><strong>SUSCRIPCIÓN:</strong> {currentContact.subscription}</p>
                   <p><strong>PRESENCIA:</strong> {presences[currentContact.jid] ? presences[currentContact.jid] : 'unknown'}</p>
                   <button className={styles.detailExposer} onClick={() => setExposerOpen((old) => !old)}>
