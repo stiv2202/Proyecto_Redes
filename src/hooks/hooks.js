@@ -132,7 +132,12 @@ const getContacts = (connection) => {
             items.forEach(item => {
                 const jid = item.getAttribute('jid');
                 const name = item.getAttribute('name') || jid.split('@')[0];
-                contacts.push({ jid, name });
+                const subscription = item.getAttribute('subscription');
+
+                // Solo incluir contactos con suscripción 'both' o 'to'
+                if (subscription === 'both' || subscription === 'to' || subscription === 'from') {
+                    contacts.push({ jid, name, subscription });
+                }
             });
 
             resolve(contacts);
@@ -159,15 +164,14 @@ const addContact = (connection, jid, name) => {
 
         const iq = $iq({ type: 'set', id: 'roster_add' })
             .c('query', { xmlns: 'jabber:iq:roster' })
-            .c('item', { jid, name, subscription: 'both' });
+            .c('item', { jid, name });
 
-        connection.sendIQ(iq, (response) => {
-            const subscribePresence = $pres({ to: jid, type: 'subscribe' }).c('priority').t('50');
-            connection.send(subscribePresence);
+        connection.sendIQ(iq, () => {
+            // Enviar solicitud de suscripción
+            const presenceSubscribe = $pres({ to: jid, type: 'subscribe' });
+            connection.send(presenceSubscribe);
 
-            console.log('response: ',response)
-
-            resolve('Contacto agregado y suscripción a la presencia solicitada.');
+            resolve('Contacto agregado y solicitud de suscripción enviada.');
         }, (error) => {
             console.error('Error al agregar el contacto:', error);
             reject(new Error(`Error al agregar el contacto: ${error.condition}`));
@@ -718,6 +722,62 @@ const register = ({ user, password }) => {
     }
 }
 
+const handleSubscriptionRequests = (connection, onSubscriptionRequest) => {
+    connection.addHandler((stanza) => {
+        if (stanza.getAttribute('type') === 'subscribe') {
+            const from = stanza.getAttribute('from');
+            onSubscriptionRequest(from);
+        }
+        return true;
+    }, null, 'presence', 'subscribe');
+};
+
+const handleSubscriptionResponses = (connection, onSubscribed, onUnsubscribed) => {
+    connection.addHandler((stanza) => {
+        const from = stanza.getAttribute('from');
+        const type = stanza.getAttribute('type');
+
+        if (type === 'subscribed') {
+            onSubscribed(from);
+        } else if (type === 'unsubscribed') {
+            onUnsubscribed(from);
+        }
+
+        return true;
+    }, null, 'presence', null);
+};
+
+const acceptSubscription = (connection, from) => {
+    return new Promise((resolve, reject) => {
+        if (!connection || !connection.connected) {
+            return reject(new Error('La conexión no está activa.'));
+        }
+
+        try {
+            connection.send($pres({ to: from, type: 'subscribed' }));
+            connection.send($pres({ to: from, type: 'subscribe' }));
+            resolve();
+        } catch (error) {
+            console.error('Error al aceptar solicitud:', error);
+            reject(new Error('Error al aceptar solicitud'));
+        }
+    })
+}
+const rejectSubscription = (connection, from) => {
+    return new Promise((resolve, reject) => {
+        if (!connection || !connection.connected) {
+            return reject(new Error('La conexión no está activa.'));
+        }
+
+        try {
+            connection.send($pres({ to: from, type: 'unsubscribed' }));
+            resolve();
+        } catch (error) {
+            console.error('Error al rechazar solicitud:', error);
+            reject(new Error('Error al rechazar solicitud'));
+        }
+    })
+}
 // Exporta todas las funciones definidas en el archivo
 export {
     logout,
@@ -737,4 +797,8 @@ export {
     getMessagesByJid,
     getRoomDetails,
     register,
+    handleSubscriptionRequests,
+    acceptSubscription,
+    rejectSubscription,
+    handleSubscriptionResponses,
 };

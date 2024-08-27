@@ -19,6 +19,10 @@ import {
   createGroupChatRoom,
   sendPresence,
   getRoomDetails,
+  handleSubscriptionRequests,
+  acceptSubscription,
+  rejectSubscription,
+  handleSubscriptionResponses,
 } from '../../hooks/hooks'; // Importa varias funciones relacionadas con XMPP.
 import styles from './MainPage.module.scss'; // Importa los estilos SCSS para la página principal.
 import selectContactImg from '../../assets/select_contact.png'; // Importa una imagen para seleccionar contactos.
@@ -99,6 +103,49 @@ function MainPage() {
         }
       };
 
+      const onSubscriptionRequest = (from) => {
+        // Aquí puedes mostrar una notificación al usuario o manejar automáticamente la solicitud
+        console.log(`Solicitud de suscripción recibida de: ${from}`);
+
+        showPopup(
+          'Nueva solicitud',
+          `¿Aceptar solicitud de ${from}?`,
+          false,
+          () => {
+            acceptSubscription(connection, from)
+              .then(() => {
+                addContact(connection, from, '') // Agrega el contacto con el JID ingresado.
+                  .then(() => {
+                    updateContacts(); // Actualiza la lista de contactos.
+                    displayNotification(`${from} agregado correctamente.`, 'success'); // Muestra una notificación de éxito.
+                  })
+                  .catch(() => displayNotification('Error al agregar contacto.', 'error')); // Muestra una notificación de error.
+              })
+              .catch(() => displayNotification('Error al aceptar solicitud.', 'error'))
+          },
+          () => {
+            rejectSubscription(connection, from)
+              .then(() => {
+                displayNotification('Solicitud rechazada.', 'info')
+                updateContacts();
+              })
+              .catch(() => displayNotification('Error al rechazar solicitud.', 'error'))
+          } // Función para manejar el rechazo de solicitud..
+        );
+      };
+
+      const onSubscribed = (from) => {
+        console.log(`${from} ha aceptado tu solicitud de suscripción.`);
+        displayNotification(`${from} ha aceptado tu solicitud.`, 'success');
+        updateContacts();
+      };
+
+      const onUnsubscribed = (from) => {
+        console.log(`${from} ha rechazado tu solicitud de suscripción.`);
+        displayNotification(`${from} ha rechazado tu solicitud.`, 'info');
+        updateContacts();
+      };
+
       // Manejador de presencia.
       const presenceHandler = (jid, presenceType) => {
         if (jid === connection.jid.split('/')[0] && presenceType !== clientPresence) {
@@ -114,6 +161,8 @@ function MainPage() {
       // Configura los manejadores de mensajes y presencia.
       handleIncomingMessages(connection, messageHandler);
       handlePresence(connection, presenceHandler);
+      handleSubscriptionRequests(connection, onSubscriptionRequest);
+      handleSubscriptionResponses(connection, onSubscribed, onUnsubscribed);
 
       // Limpia los manejadores cuando el componente se desmonte.
       return () => {
@@ -201,7 +250,7 @@ function MainPage() {
         addContact(connection, jid, '') // Agrega el contacto con el JID ingresado.
           .then(() => {
             updateContacts(); // Actualiza la lista de contactos.
-            displayNotification(`${jid} agregado correctamente.`, 'success'); // Muestra una notificación de éxito.
+            displayNotification(`Solicitud enviada a ${jid}.`, 'success'); // Muestra una notificación de éxito.
           })
           .catch(() => displayNotification('Error al agregar contacto.', 'error')); // Muestra una notificación de error.
       },

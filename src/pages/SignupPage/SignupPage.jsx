@@ -10,7 +10,6 @@ import ConnectionContext from '../../context/ConnectionContext'; // Importa el c
 import XMPPError from '../../helpers/XMPPError'; // Importa la clase XMPPError para manejar errores específicos.
 import AnchorButton from '../../components/AnchorButton'
 import { register } from '../../hooks/hooks';
-import useNotifications from '../../hooks/useNotifications';
 
 function SignupPage() {
   // Obtiene la función de login del contexto.
@@ -20,7 +19,6 @@ function SignupPage() {
   const [loading, setLoading] = useState(false); // Estado para manejar el estado de carga.
   const [form, setForm] = useState({ user: "", password: "" }); // Estado para manejar los valores del formulario.
   const [errors, setErrors] = useState({}); // Estado para almacenar errores de validación de campos.
-  const {displayNotification} = useNotifications();
 
   // Maneja los cambios en los campos de entrada del formulario.
   const handleChange = (e) => {
@@ -91,19 +89,17 @@ function SignupPage() {
     // Llama a la función de login y maneja el resultado.
     register(form)
       .then(() => {
-        // login(form).then(() => {
-        //   navigate('/'); // Redirige al usuario a la página principal después del login exitoso.
-        //   setLoading(false); // Desactiva el indicador de carga.
-        // }).catch((err) => {
-        //   setLoading(false); // Desactiva el indicador de carga en caso de error.
-        //   if (err instanceof XMPPError) {
-        //     setError(err); // Establece el error si es una instancia de XMPPError.
-        //   } else {
-        //     console.error('Error al iniciar sesión:', err); // Muestra un error en la consola para otros tipos de errores.
-        //   }
-        // });
-        displayNotification('Registro exitoso. Ahora puedes iniciar sesión.', 'success')
-        setLoading(false)
+        login(form).then(() => {
+          navigate('/'); // Redirige al usuario a la página principal después del login exitoso.
+          setLoading(false); // Desactiva el indicador de carga.
+        }).catch((err) => {
+          setLoading(false); // Desactiva el indicador de carga en caso de error.
+          if (err instanceof XMPPError) {
+            setError(err); // Establece el error si es una instancia de XMPPError.
+          } else {
+            console.error('Error al iniciar sesión:', err); // Muestra un error en la consola para otros tipos de errores.
+          }
+        });
       }).catch((err) => {
         setLoading(false);
         if (err instanceof XMPPError) {
