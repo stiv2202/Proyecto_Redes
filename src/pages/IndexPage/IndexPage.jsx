@@ -3,6 +3,7 @@ import LoginPage from '../../pages/LoginPage'; // Importa la página de inicio d
 import MainPage from '../../pages/MainPage'; // Importa la página principal.
 import useConnection from './../../hooks/useConnection'; // Importa el hook personalizado para obtener el estado de conexión.
 import { Navigate } from 'react-router-dom'; // Importa el componente para redireccionar rutas.
+import SignupPage from '../SignupPage/SignupPage';
 
 function IndexPage() {
   const connection = useConnection(); // Obtiene el objeto de conexión del hook useConnection.
@@ -20,6 +21,11 @@ function IndexPage() {
           element={connected ? <Navigate to="/" /> : <LoginPage />}
         />
         {/* Redirige a la página principal si la conexión está activa, o muestra la página de inicio de sesión si no lo está. */}
+        
+        <Route path="/signup"
+          element={connected ? <Navigate to="/" /> : <SignupPage />}
+        />
+        {/* Redirige a la página principal si la conexión está activa, o muestra la página de registro si no lo está. */}
         
         <Route path="*" element={<Navigate to="/" />} />
         {/* Redirige a la página principal para cualquier ruta no definida. */}

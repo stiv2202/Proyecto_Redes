@@ -59,7 +59,6 @@ const ConnectionProvider = ({ children }) => {
                         reject(new XMPPError('Desconectado del servidor XMPP.', Strophe.Status.DISCONNECTED));
                         break;
                     default:
-                        console.log(`Estado de conexión: ${status}`);
                         break;
                 }
             });

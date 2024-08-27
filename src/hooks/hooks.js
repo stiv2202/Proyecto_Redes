@@ -1,5 +1,8 @@
 import { Strophe, $msg, $pres, $iq } from 'strophe.js';
 import consts from '../helpers/consts';
+import { client, xml } from '@xmpp/client/browser';
+import debug from '@xmpp/debug';
+import XMPPError from '../helpers/XMPPError';
 
 /**
  * Envía una presencia al servidor XMPP con el tipo especificado.
@@ -158,9 +161,11 @@ const addContact = (connection, jid, name) => {
             .c('query', { xmlns: 'jabber:iq:roster' })
             .c('item', { jid, name, subscription: 'both' });
 
-        connection.sendIQ(iq, () => {
+        connection.sendIQ(iq, (response) => {
             const subscribePresence = $pres({ to: jid, type: 'subscribe' }).c('priority').t('50');
             connection.send(subscribePresence);
+
+            console.log('response: ',response)
 
             resolve('Contacto agregado y suscripción a la presencia solicitada.');
         }, (error) => {
@@ -653,6 +658,66 @@ const getRoomDetails = (connection, roomJid) => {
     });
 };
 
+const register = ({ user, password }) => {
+    try {
+        const xmppClient = client({
+            service: consts.XMPP_SERVER,
+            resource: consts.RESOURCE,
+            sasl: [],
+            username: user,
+            password: password,
+        });
+        debug(xmppClient, true);
+
+        return new Promise((resolve, reject) => {
+            xmppClient.on('error', (err) => {
+                if (err.code === 'ECONERROR') {
+                    xmppClient.stop();
+                    xmppClient.removeAllListeners();
+                    reject(new XMPPError('Error en cliente XMPP.', err.code));
+                }
+            });
+
+            xmppClient.on('open', () => {
+                const iq = xml(
+                    'iq',
+                    { type: 'set', to: consts.DOMAIN_NAME, id: 'register' },
+                    xml(
+                        'query',
+                        { xmlns: 'jabber:iq:register' },
+                        xml('username', {}, user),
+                        xml('password', {}, password)
+                    )
+                );
+                xmppClient.send(iq);
+            });
+
+            xmppClient.on('stanza', async (stanza) => {
+                if (stanza.is('iq') && stanza.getAttr("id") === "register") {
+                    await xmppClient.stop();
+                    xmppClient.removeAllListeners();
+                    if (stanza.getAttr("type") === "result") {
+                        resolve({ user, password });
+                    } else if (stanza.getAttr("type") === "error") {
+                        const error = stanza.getChild("error");
+                        if (error?.getChild("conflict")) {
+                            reject(new XMPPError('El usuario ya está en uso.', 0));
+                        }
+                        reject(new XMPPError('Ocurrió un error en tu registro. Intenta nuevamente.', 0));
+                    }
+                }
+            });
+
+            xmppClient.start().catch((err) => {
+                reject(err);
+            });
+        });
+    } catch (error) {
+        console.error('Error en el registro', error);
+        throw error;
+    }
+}
+
 // Exporta todas las funciones definidas en el archivo
 export {
     logout,
@@ -671,4 +736,5 @@ export {
     listAvailableRooms,
     getMessagesByJid,
     getRoomDetails,
+    register,
 };

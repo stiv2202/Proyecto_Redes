@@ -1,58 +1,105 @@
 .popupOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .popupContent {
-    background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 300px;
-    max-width: 80%;
-  }
-  
-  .popupTitle {
-    margin-bottom: 10px;
-  }
-  
-  .popupMessage {
-    margin-bottom: 20px;
-  }
-  
-  .popupActions {
-    display: flex;
-    justify-content: flex-end;
-  }
-  
-  .confirmButton {
-    background-color: #007bff;
-    color: white;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    margin-right: 10px;
-    cursor: pointer;
-  }
-  
-  .cancelButton {
-    background-color: #6c757d;
-    color: white;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .confirmButton:hover,
-  .cancelButton:hover {
-    opacity: 0.8;
-  }
-  
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popupContent {
+  background-color: white;
+  padding: 30px 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 350px;
+  max-width: 80%;
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.popupContent p{
+  margin: 0;
+}
+
+.popupTitle {
+  margin-bottom: 10px;
+}
+
+.popupMessage {
+  margin-bottom: 20px;
+}
+
+.popupActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.confirmButton {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.cancelButton {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.confirmButton:hover,
+.cancelButton:hover {
+  opacity: 0.8;
+}
+
+.popupButtons{
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.popupButtons button{
+  color:white;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  border: none;
+  outline: none;
+  padding: 7px 15px 9px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.accept{
+  background: rgb(47, 199, 47);
+}
+
+.accept:hover{
+  background: rgb(217, 236, 217);
+  color: rgb(47, 199, 47);
+}
+
+.cancel{
+  background: rgb(199, 47, 47);
+}
+
+.cancel:hover{
+  background: rgb(236, 217, 217);
+  color: rgb(199, 47, 47);
+}

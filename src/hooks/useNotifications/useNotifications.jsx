@@ -1,4 +1,6 @@
 import { useSnackbar } from "notistack"; // Importa el hook useSnackbar de la librería notistack para mostrar notificaciones.
+import { IoClose } from "react-icons/io5";
+import styles from './useNotifications.module.scss'
 
 export default function useNotifications() {
     // Usa el hook useSnackbar para obtener las funciones enqueueSnackbar y closeSnackbar.
@@ -22,9 +24,10 @@ export default function useNotifications() {
                 <button
                     aria-label="close" // Etiqueta accesible para lectores de pantalla.
                     color="inherit" // Color del botón.
+                    className={styles.closeButton}
                     onClick={() => closeSnackbar(key)} // Función para cerrar la notificación.
                 >
-                    close
+                    <IoClose />
                 </button>
             ),
         };

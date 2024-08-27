@@ -1,8 +1,11 @@
+/* eslint-disable no-undef */
 // Importaciones necsearias
 import IndexPage from '../../pages/IndexPage';
 import { ConnectionProvider } from '../../context/ConnectionContext';
 import { SnackbarProvider } from 'notistack';
 import styles from './App.module.scss'
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // Define el componente funcional App
 function App() {

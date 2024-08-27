@@ -3,6 +3,7 @@
 import { useContext, useState, useEffect } from 'react'; // Importa hooks de React.
 import { ClipLoader } from 'react-spinners'; // Importa el componente ClipLoader para el indicador de carga.
 import ConnectionContext from '../../context/ConnectionContext'; // Importa el contexto para manejar la conexión.
+import { IoIosArrowUp } from "react-icons/io";
 import {
   logout,
   deleteAccount,
@@ -29,6 +30,7 @@ import useNotifications from '../../hooks/useNotifications'; // Importa el hook 
 import randomString from '../../helpers/randomString'; // Importa una función para generar cadenas aleatorias.
 import PopUp from '../../components/PopUp/PopUp'; // Importa el componente PopUp para mostrar diálogos emergentes.
 import usePopup from '../../hooks/usePopUp'; // Importa el hook personalizado para manejar popups.
+import { IoIosArrowDown } from "react-icons/io";
 
 function MainPage() {
   // Obtiene funciones y estados del hook usePopup.
@@ -47,6 +49,7 @@ function MainPage() {
   const [presences, setPresences] = useState({});
   const [currentChat, setCurrentChat] = useState([]);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [exposerOpen, setExposerOpen] = useState(false);
   // Obtiene la función de notificaciones del hook useNotifications.
   const { displayNotification } = useNotifications();
 
@@ -75,7 +78,6 @@ function MainPage() {
     if (connection && connection.connected) {
       // Manejador de mensajes entrantes.
       const messageHandler = (jid, messageText, url, _, roomJid) => {
-        console.log(`Nuevo mensaje ${roomJid ? `(grupo ${roomJid}) ` : ''}de ${jid}: ${messageText} ${url && url !== messageText ? `, ${url}` : ''}`);
         const newMessage = {
           from: roomJid ? `${jid}@${consts.DOMAIN_NAME}` : jid,
           message: messageText ?? url,
@@ -290,75 +292,116 @@ function MainPage() {
     );
   };
 
+  console.log('contacts: ', contacts)
+
   // Renderiza la página principal.
   return (
     <div className={styles.mainContainer}>
       <div className={styles.contactsSection}>
-        <h1>Bienvenido {connection.jid.split('@')[0]}! - {clientPresence}</h1>
-        <button onClick={handleLogout} className={styles.logoutButton}>
-          Cerrar Sesión
-        </button>
-        <button type="button" onClick={handleDeleteAccount}>Eliminar Cuenta</button>
-        <button onClick={handleAddContact}>Agregar Contacto</button>
-        <button onClick={handleCreateRoom}>Crear nueva sala</button>
-
-        {/* Muestra detalles del contacto seleccionado si existe */}
-        {currentContact &&
-          <>
-            <h2>Detalles de contacto seleccionado</h2>
-            <div>JID: {currentContact.jid}</div>
-            <div>NAME: {currentContact.name}</div>
-            <div>SUBSCRIPTION: {currentContact.subscription}</div>
-            <div>PRESENCE: {presences[currentContact.jid] ? presences[currentContact.jid] : 'unknown'}</div>
-          </>
-        }
-
-        {/* Muestra la lista de contactos si hay alguno */}
-        {contacts && contacts.length > 0 &&
-          <h2>Lista de contactos</h2>}
-        {contacts.map(contact => (
-          <div key={contact.jid}>
-            <button onClick={() => handleGetDetails(contact.jid)}>{contact.jid}</button>
-            <span>
-              {presences[contact.jid] ? ` - ${presences[contact.jid]}` : ' - unknown'}
-            </span>
+        <div className={styles.myProfile}>
+          <div className={styles.mainContactInfo}>
+            {/* Indicador de presencia del contacto */}
+            <span className={styles.presenceIndicator} style={{
+              background: getColorByPresence(clientPresence ? clientPresence : 'unknown')
+            }} />
+            <h3 className={styles.contactName}>
+              {connection.name || connection.jid.split('@')[0]}
+            </h3>
+            {connection.name && (
+              <p className={styles.contactJid}>
+                {`(${connection.jid.split('@')[0]})`}
+              </p>
+            )}
           </div>
-        ))}
-
-        {/* Muestra la lista de salas disponibles si hay alguna */}
-        {rooms && rooms.length > 0 &&
-          <h2>Salas disponibles</h2>}
-        {rooms.map(room => (
-          <div key={room.jid}>
-            <h4>{room.name}</h4>
-            <button onClick={() => handleGetDetails(room.jid)}>{room.jid}</button>
+          <div className={styles.userActions}>
+            <button onClick={handleLogout} className={styles.logoutButton}>
+              Cerrar Sesión
+            </button>
+            <button type="button" onClick={handleDeleteAccount}>Eliminar Cuenta</button>
+            <button onClick={handleAddContact}>Agregar Contacto</button>
+            <button onClick={handleCreateRoom}>Crear Sala Grupal</button>
           </div>
-        ))}
+        </div>
+        <div className={styles.contactList}>
+
+          {/* Muestra la lista de contactos si hay alguno */}
+          {contacts && contacts.length > 0 &&
+            <h2>Mis contactos</h2>}
+          {contacts.map(contact => (
+            <button
+              key={contact.jid}
+              className={`${styles.contactCard} ${currentContact && currentContact.jid === contact.jid ? styles.selectedChat : ''}`}
+              onClick={() => handleGetDetails(contact.jid)}
+            >
+              <div className={styles.contactCardName}>
+                <span className={styles.presenceIndicator} style={{
+                  background: getColorByPresence(presences[contact.jid] ? presences[contact.jid] : 'unknown')
+                }} />
+                <h3>{contact.name ?? contact.jid.split('@')[0]}</h3>
+              </div>
+              <p>{`(${contact.jid})`}</p>
+            </button>
+          ))}
+
+          {/* Muestra la lista de salas disponibles si hay alguna */}
+          {rooms && rooms.length > 0 &&
+            <h2>Salas disponibles</h2>}
+          {rooms.map(room => (
+            <button
+              key={room.jid}
+              className={`${styles.contactCard} ${currentContact && currentContact.jid === room.jid ? styles.selectedChat : ''}`}
+              onClick={() => handleGetDetails(room.jid)}
+            >
+              <div className={styles.contactCardName}>
+                <span className={styles.presenceIndicator} style={{
+                  background: getColorByPresence(presences[room.jid] ?? 'unknown')
+                }} />
+                <h3>{room.name ?? room.jid.split('@')[0]}</h3>
+              </div>
+              <p>{`(${room.jid})`}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className={styles.chatSection}>
         {/* Muestra un mensaje de selección si no hay contacto seleccionado */}
         {!currentContact && <div className={styles.placeholderContainer}>
           <img className={styles.chatSectionPlaceholder} src={selectContactImg} alt="Select Contact Image" />
-          <p>Selecciona un contacto o grupo para empezar a chatear.</p>
+          <p>Selecciona un contacto o sala para empezar a chatear.</p>
         </div>}
 
         {/* Muestra la sección de chat si hay un contacto seleccionado */}
         {currentContact && (
           <div key={currentContact?.jid} className={styles.chatContent}>
             <div className={styles.contactInfo}>
-              {/* Indicador de presencia del contacto */}
-              <span className={styles.presenceIndicator} style={{
-                background: getColorByPresence(presences[currentContact.jid] ? presences[currentContact.jid] : 'unknown')
-              }} />
-              <h3 className={styles.contactName}>
-                {currentContact.name || currentContact.jid.split('@')[0]}
-              </h3>
-              {currentContact.name && (
-                <p className={styles.contactJid}>
-                  {`(${currentContact.jid.split('@')[0]})`}
-                </p>
-              )}
+              <div className={styles.contactInfoContent}>
+                {/* Indicador de presencia del contacto */}
+                <span className={styles.presenceIndicator} style={{
+                  background: getColorByPresence(presences[currentContact.jid] ? presences[currentContact.jid] : 'unknown')
+                }} />
+                <h3 className={styles.contactName}>
+                  {currentContact.name || currentContact.jid.split('@')[0]}
+                </h3>
+                {currentContact.name && (
+                  <p className={styles.contactJid}>
+                    {`(${currentContact.jid.split('@')[0]})`}
+                  </p>
+                )}
+              </div>
+              {/* Muestra detalles del contacto seleccionado si existe */}
+              <div className={`${styles.contactDetailContainer} ${exposerOpen ? styles.contactDetailOpen : ''}`}>
+                <div className={styles.contactDetail}>
+                  <h2>Detalles de contacto.</h2>
+                  <p><strong>JID:</strong> {currentContact.jid}</p>
+                  <p><strong>NOMBRE:</strong> {currentContact.name ?? currentContact.jid.split('@')[0]}</p>
+                  <p><strong>SUSCRIPCIÓN:</strong> {currentContact.subscription}</p>
+                  <p><strong>PRESENCIA:</strong> {presences[currentContact.jid] ? presences[currentContact.jid] : 'unknown'}</p>
+                  <button className={styles.detailExposer} onClick={() => setExposerOpen((old) => !old)}>
+                    {exposerOpen ? <IoIosArrowUp /> : <IoIosArrowDown />}
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className={styles.messages}>

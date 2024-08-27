@@ -7,7 +7,8 @@
 
 .contactsSection {
   flex: 0.8;
-  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
 }
 
 .chatSection {
@@ -51,18 +52,30 @@
 
 .contactInfo {
   height: 8%;
+  z-index: 9999;
+  position: relative;
+}
+
+.contactInfoContent {
+  height: 100%;
+}
+
+.mainContactInfo {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  padding: 13px 15px;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  gap: 5px;
+  font-size: 28px;
 }
 
 .inputMessageContent {
   height: 12%;
 }
 
-.contactInfo {
-  z-index: 9999;
-  position: relative;
-}
-
-.contactInfo,
+.contactInfoContent,
 .inputMessageContent {
   background: #26688C;
   display: flex;
@@ -81,6 +94,17 @@
 }
 
 .contactInfo p {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+.mainContactInfo h3,
+.mainContactInfo p,
+.mainContactInfo span {
+  margin: auto 0;
+}
+
+.mainContactInfo p {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 14px;
 }
@@ -179,4 +203,157 @@
 
 .received {
   background: #a9bfca;
+}
+
+.contactList {
+  overflow-y: scroll;
+}
+
+.contactList>* {
+  padding-left: 15px;
+}
+
+.contactList h2 {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin-left: 10px;
+  font-size: 25px;
+  margin-bottom: 15px;
+}
+
+.userActions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0 10px;
+}
+
+.userActions button {
+  background: none;
+  border: none;
+  outline: none;
+  border-radius: 20px;
+  background: #26688c;
+  color: white;
+  padding: 8px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 12px;
+}
+
+.userActions button:hover {
+  background: #bad4e3;
+  color: #26688c;
+}
+
+.contactCard {
+  background: none;
+  border: none;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 8px;
+}
+
+.contactCard:hover {
+  background-color: rgb(220, 250, 255);
+}
+
+.contactCard::after {
+  content: '';
+  content: "";
+  border: 1px solid #a4a4a4;
+  width: 50%;
+  margin: auto;
+  margin-top: 8px;
+}
+
+.contactCardName {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.contactCardName h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.contactCardName .presenceIndicator {
+  height: 5px;
+  width: 5px;
+}
+
+.contactCard p {
+  font-size: 14px;
+  margin: 3px 0 7px;
+  color: gray;
+}
+
+.selectedChat {
+  background-color: #add0e38f;
+}
+
+.selectedChat:hover {
+  background-color: #add0e38f;
+}
+
+.contactDetailContainer {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  z-index: -1;
+  top: calc(100% - 162px);
+  height: 197px;
+}
+
+.contactDetail {
+  box-sizing: border-box;
+  background: rgb(199 223 241);
+  padding: 15px;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.contactDetail h2 {
+  text-align: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  margin-bottom: 10px;
+}
+
+.contactDetail p {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.detailExposer {
+  background-color: #589fed;
+  position: absolute;
+  top: 100%;
+  border-radius: 0 0 100% 100%;
+  color: white;
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.contactDetailOpen {
+  top: 100%;
 }
