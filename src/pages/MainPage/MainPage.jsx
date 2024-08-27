@@ -59,7 +59,6 @@ function MainPage() {
 
   // Limpia el chat actual cuando se cambia el contacto seleccionado.
   useEffect(() => {
-    console.log('currentContact: ', currentContact)
     if (currentContact) {
       setTimeout(() => {
         setCurrentChat([]);
@@ -105,8 +104,6 @@ function MainPage() {
       };
 
       const onSubscriptionRequest = (from) => {
-        // Aquí puedes mostrar una notificación al usuario o manejar automáticamente la solicitud
-        console.log(`Solicitud de suscripción recibida de: ${from}`);
 
         showPopup(
           'Nueva solicitud',
@@ -136,13 +133,11 @@ function MainPage() {
       };
 
       const onSubscribed = (from) => {
-        console.log(`${from} ha aceptado tu solicitud de suscripción.`);
         displayNotification(`${from} ha aceptado tu solicitud.`, 'success');
         updateContacts();
       };
 
       const onUnsubscribed = (from) => {
-        console.log(`${from} ha rechazado tu solicitud de suscripción.`);
         displayNotification(`${from} ha rechazado tu solicitud.`, 'info');
         updateContacts();
       };
@@ -341,8 +336,6 @@ function MainPage() {
       () => { return } // Función para manejar la cancelación (vacía en este caso).
     );
   };
-
-  console.log('contacts: ', contacts)
 
   // Renderiza la página principal.
   return (
